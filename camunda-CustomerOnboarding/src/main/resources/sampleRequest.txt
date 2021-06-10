@@ -1,0 +1,26 @@
+Method-POST
+URL-http://localhost:5050/api/customerOnboarding
+Payload:
+{
+    "requestorId": "M0101",
+    "source": "WEB",
+    "requestData": {
+        "customer":{
+            "fullName":"Parag Ranjan",
+            "email":"parag.ranjan@machint.com",
+            "phNum":"7978869492"
+        },
+        "customerAddress":[
+		{
+                "addressType":"PRMNT",
+                "houseNumber":"76-76A",
+                "street":"Jubliee Enclave Road",
+                "zipCode":"500081",
+                "city":"Hyderabad",
+                "district":"RangaReddy",
+                "state":"Telengana",
+                "country":"India"
+            }
+		]
+    }
+}
