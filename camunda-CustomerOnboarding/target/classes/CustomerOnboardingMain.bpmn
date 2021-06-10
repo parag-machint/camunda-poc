@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_0fr9mxs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.8.0">
+  <bpmn:process id="customerOnboardingMain" name="Customer Onboarding Main Process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>SequenceFlow_1fp17al</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1fp17al" sourceRef="StartEvent_1" targetRef="fetchCustomerPhNum" />
+    <bpmn:endEvent id="EndEvent_0x6ir2l">
+      <bpmn:incoming>Flow_1abap8u</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_16gzt2m" sourceRef="fetchCustomerPhNum" targetRef="checkExistingCustomer" />
+    <bpmn:serviceTask id="fetchCustomerPhNum" name="Fetch Customer Phone Number" camunda:class="com.machint.poc.demo.javadelegate.CustomerOnboardingJavaDelegate">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="stage">CHECK_EXISTING</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1fp17al</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_16gzt2m</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1abap8u" sourceRef="Activity_0rle5wn" targetRef="EndEvent_0x6ir2l" />
+    <bpmn:userTask id="Activity_0rle5wn" name="Pause" camunda:candidateUsers="demo">
+      <bpmn:incoming>Flow_07kffcg</bpmn:incoming>
+      <bpmn:outgoing>Flow_1abap8u</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="isExisting" name="Is Existing">
+      <bpmn:incoming>Flow_1oeo3nw</bpmn:incoming>
+      <bpmn:outgoing>Flow_100i60b</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0psgohb</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_100i60b" name="No" sourceRef="isExisting" targetRef="Activity_1q3pkjr">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${statusCode == "404"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0psgohb" name="Yes" sourceRef="isExisting" targetRef="Activity_11cb27k">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${statusCode == "200"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:userTask id="Pause" name="Pause" camunda:candidateUsers="demo">
+      <bpmn:incoming>Flow_09ppcj3</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ewcoy3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="Event_16xg4w6">
+      <bpmn:incoming>Flow_0ewcoy3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0ewcoy3" sourceRef="Pause" targetRef="Event_16xg4w6" />
+    <bpmn:sequenceFlow id="Flow_1oeo3nw" sourceRef="checkExistingCustomer" targetRef="isExisting" />
+    <bpmn:serviceTask id="checkExistingCustomer" name="Check For Existing Customer">
+      <bpmn:extensionElements>
+        <camunda:connector>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="headers">
+              <camunda:map>
+                <camunda:entry key="Accept">*/*</camunda:entry>
+              </camunda:map>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="method">GET</camunda:inputParameter>
+            <camunda:inputParameter name="url">http://localhost:4040/api/customerOnboardingCURD?phNum=${phNum}</camunda:inputParameter>
+            <camunda:outputParameter name="statusCode">${JSON(response).prop("statusCode").stringValue()}</camunda:outputParameter>
+            <camunda:outputParameter name="checkExistingResponseJson">${response}</camunda:outputParameter>
+          </camunda:inputOutput>
+          <camunda:connectorId>http-connector</camunda:connectorId>
+        </camunda:connector>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_16gzt2m</bpmn:incoming>
+      <bpmn:outgoing>Flow_1oeo3nw</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_07kffcg" sourceRef="insertCustomerData" targetRef="Activity_0rle5wn" />
+    <bpmn:serviceTask id="insertCustomerData" name="Insert Customer Data">
+      <bpmn:extensionElements>
+        <camunda:connector>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="payload">${insertRequestJson}</camunda:inputParameter>
+            <camunda:inputParameter name="headers">
+              <camunda:map>
+                <camunda:entry key="Content-Type">application/json</camunda:entry>
+              </camunda:map>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="method">POST</camunda:inputParameter>
+            <camunda:inputParameter name="url">http://localhost:4040/api/customerOnboardingCURD</camunda:inputParameter>
+            <camunda:outputParameter name="insertResponse">${response}</camunda:outputParameter>
+          </camunda:inputOutput>
+          <camunda:connectorId>http-connector</camunda:connectorId>
+        </camunda:connector>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1gr23vg</bpmn:incoming>
+      <bpmn:outgoing>Flow_07kffcg</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_1bsf3ci" name="Update Customer Data">
+      <bpmn:extensionElements>
+        <camunda:connector>
+          <camunda:inputOutput>
+            <camunda:inputParameter name="payload">${updateRequestJson}</camunda:inputParameter>
+            <camunda:inputParameter name="headers">
+              <camunda:map>
+                <camunda:entry key="Content-Type">application/json</camunda:entry>
+              </camunda:map>
+            </camunda:inputParameter>
+            <camunda:inputParameter name="method">PUT</camunda:inputParameter>
+            <camunda:inputParameter name="url">http://localhost:4040/api/customerOnboardingCURD?custId=${custId}</camunda:inputParameter>
+            <camunda:outputParameter name="updateResponse">${response}</camunda:outputParameter>
+          </camunda:inputOutput>
+          <camunda:connectorId>http-connector</camunda:connectorId>
+        </camunda:connector>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0ccdycd</bpmn:incoming>
+      <bpmn:outgoing>Flow_09ppcj3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_09ppcj3" sourceRef="Activity_1bsf3ci" targetRef="Pause" />
+    <bpmn:sequenceFlow id="Flow_0ccdycd" sourceRef="Activity_11cb27k" targetRef="Activity_1bsf3ci" />
+    <bpmn:serviceTask id="Activity_11cb27k" name="Set Customer Update Data" camunda:class="com.machint.poc.demo.javadelegate.CustomerOnboardingJavaDelegate">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="stage">UPDATE</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0psgohb</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ccdycd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_1q3pkjr" name="Set Customer Insert Data" camunda:class="com.machint.poc.demo.javadelegate.CustomerOnboardingJavaDelegate">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="stage">INSERT</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_100i60b</bpmn:incoming>
+      <bpmn:outgoing>Flow_1gr23vg</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1gr23vg" sourceRef="Activity_1q3pkjr" targetRef="insertCustomerData" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="customerOnboardingMain">
+      <bpmndi:BPMNEdge id="Flow_1gr23vg_di" bpmnElement="Flow_1gr23vg">
+        <di:waypoint x="840" y="267" />
+        <di:waypoint x="970" y="267" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ccdycd_di" bpmnElement="Flow_0ccdycd">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="970" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09ppcj3_di" bpmnElement="Flow_09ppcj3">
+        <di:waypoint x="1070" y="120" />
+        <di:waypoint x="1210" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07kffcg_di" bpmnElement="Flow_07kffcg">
+        <di:waypoint x="1070" y="267" />
+        <di:waypoint x="1210" y="267" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1oeo3nw_di" bpmnElement="Flow_1oeo3nw">
+        <di:waypoint x="540" y="267" />
+        <di:waypoint x="605" y="267" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ewcoy3_di" bpmnElement="Flow_0ewcoy3">
+        <di:waypoint x="1310" y="120" />
+        <di:waypoint x="1352" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0psgohb_di" bpmnElement="Flow_0psgohb">
+        <di:waypoint x="630" y="242" />
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="740" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="636" y="178" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_100i60b_di" bpmnElement="Flow_100i60b">
+        <di:waypoint x="655" y="267" />
+        <di:waypoint x="740" y="267" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="685" y="243" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1abap8u_di" bpmnElement="Flow_1abap8u">
+        <di:waypoint x="1310" y="267" />
+        <di:waypoint x="1352" y="267" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_16gzt2m_di" bpmnElement="SequenceFlow_16gzt2m">
+        <di:waypoint x="360" y="267" />
+        <di:waypoint x="440" y="267" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1fp17al_di" bpmnElement="SequenceFlow_1fp17al">
+        <di:waypoint x="215" y="267" />
+        <di:waypoint x="260" y="267" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="249" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0x6ir2l_di" bpmnElement="EndEvent_0x6ir2l">
+        <dc:Bounds x="1352" y="249" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1commxi_di" bpmnElement="fetchCustomerPhNum">
+        <dc:Bounds x="260" y="227" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1c7mu91_di" bpmnElement="Activity_0rle5wn">
+        <dc:Bounds x="1210" y="227" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0zrnair_di" bpmnElement="isExisting" isMarkerVisible="true">
+        <dc:Bounds x="605" y="242" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="605" y="299" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1s0xsh5_di" bpmnElement="Pause">
+        <dc:Bounds x="1210" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_16xg4w6_di" bpmnElement="Event_16xg4w6">
+        <dc:Bounds x="1352" y="102" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_038tb5g_di" bpmnElement="checkExistingCustomer">
+        <dc:Bounds x="440" y="227" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1ox8op2_di" bpmnElement="insertCustomerData">
+        <dc:Bounds x="970" y="227" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1bsf3ci_di" bpmnElement="Activity_1bsf3ci">
+        <dc:Bounds x="970" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1le0i1y_di" bpmnElement="Activity_11cb27k">
+        <dc:Bounds x="740" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1q3pkjr_di" bpmnElement="Activity_1q3pkjr">
+        <dc:Bounds x="740" y="227" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
